@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Timeline Grid with History Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BBH+Sans+Hegarty:wght@400&display=swap" rel="stylesheet">
 <style>
   :root{
     --axis-bg:#0b0f19;
@@ -22,8 +25,390 @@
     font:14px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     height:100vh;
     display:flex;
-    align-items:stretch;
+    flex-direction:column;
+    align-items:center;
+    padding-top:60px;
+  }
+  .app-title{
+    position:absolute;
+    top:-50px;
+    left:0px;
+    z-index:10;
+    color:var(--text);
+    font-family:'BBH Sans Hegarty',sans-serif;
+    font-size:24px;
+    font-weight:400;
+    letter-spacing:0.05em;
+  }
+  .app-container{
+    width:100%;
+    max-width:1200px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+  }
+  .logo-container{
+    position:absolute;
+    top:-50px;
+    right:0px;
+    z-index:10;
+  }
+  .chart-icons{
+    position:absolute;
+    top:-50px;
+    right:0px;
+    z-index:10;
+    display:flex;
+    gap:8px;
+  }
+  .bar-duration{
+    position:absolute;
+    top:-50px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:10;
+    color:var(--muted);
+    font-size:18px;
+    font-weight:600;
+  }
+  .chart-icon{
+    width:32px;
+    height:32px;
+    opacity:0.7;
+    transition:opacity 0.2s ease;
+    cursor:pointer;
+  }
+  .chart-icon:hover{
+    opacity:1;
+  }
+  .chart-icon.active{
+    opacity:1;
+    filter:drop-shadow(0 0 4px rgba(255,255,255,0.3));
+  }
+  .chart-icon:not(.active){
+    filter:grayscale(100%) opacity(0.5);
+  }
+  .chart-icon:not(.active):hover{
+    filter:grayscale(50%) opacity(0.7);
+  }
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.9);
+    color:#fff;
+    padding:12px 24px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:500;
+    z-index:3000;
+    opacity:0;
+    transform:translateX(-50%) translateY(20px);
+    transition:opacity 0.3s ease, transform 0.3s ease;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.1);
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+  .pie-chart-view{
+    display:none;
+    width:min(600px,90vw);
+    height:min(600px,90vh);
+    margin:auto;
+    position:relative;
+  }
+  .pie-chart-view.active{
+    display:block;
+  }
+  .gantt-chart-view{
+    display:none;
+    width:min(1200px,95vw);
+    height:min(700px,85vh);
+    margin:auto;
+    position:relative;
+  }
+  .gantt-chart-view.active{
+    display:block;
+  }
+  .gantt-chart-container{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:auto;
+    background:var(--bg);
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .gantt-timeline::-webkit-scrollbar{
+    width:12px;
+    height:12px;
+  }
+  .gantt-timeline::-webkit-scrollbar-track{
+    background:var(--axis-bg);
+    border-radius:6px;
+  }
+  .gantt-timeline::-webkit-scrollbar-thumb{
+    background:var(--line);
+    border-radius:6px;
+    border:2px solid var(--axis-bg);
+  }
+  .gantt-timeline::-webkit-scrollbar-thumb:hover{
+    background:#2a3441;
+  }
+  .gantt-timeline::-webkit-scrollbar-corner{
+    background:var(--axis-bg);
+  }
+  .gantt-content::-webkit-scrollbar{
+    width:12px;
+    height:12px;
+  }
+  .gantt-content::-webkit-scrollbar-track{
+    background:var(--axis-bg);
+    border-radius:6px;
+  }
+  .gantt-content::-webkit-scrollbar-thumb{
+    background:var(--line);
+    border-radius:6px;
+    border:2px solid var(--axis-bg);
+  }
+  .gantt-content::-webkit-scrollbar-thumb:hover{
+    background:#2a3441;
+  }
+  .gantt-content::-webkit-scrollbar-corner{
+    background:var(--axis-bg);
+  }
+  .gantt-header{
+    display:flex;
+    background:var(--axis-bg);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .gantt-timeline{
+    flex:1;
+    background:var(--axis-bg);
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+  .gantt-content{
+    display:flex;
+    flex:1;
+    overflow:auto;
+  }
+  .gantt-rows{
+    flex:1;
+    position:relative;
+  }
+  .gantt-row{
+    height:50px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    position:relative;
+  }
+  .gantt-row:nth-child(even){
+    background:rgba(255,255,255,0.02);
+  }
+  .gantt-bar{
+    height:30px;
+    border-radius:4px;
+    position:absolute;
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    font-size:12px;
+    font-weight:500;
+    color:#fff;
+    cursor:pointer;
+    transition:opacity 0.2s ease;
+  }
+  .gantt-bar:hover{
+    opacity:0.8;
+  }
+  .gantt-timeline-header{
+    height:40px;
+    display:flex;
+    align-items:center;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text);
+    border-bottom:1px solid var(--line);
+  }
+  .gantt-month{
+    min-width:80px;
+    text-align:center;
+    border-right:1px solid var(--line);
+    padding:8px 4px;
+  }
+  .gantt-grid{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    pointer-events:none;
+  }
+  .gantt-grid-line{
+    position:absolute;
+    top:0;
+    bottom:0;
+    border-left:1px solid var(--line);
+    opacity:0.3;
+  }
+  .bar-chart-view{
+    display:none;
+    width:min(1200px,95vw);
+    height:min(700px,85vh);
+    margin:auto;
+    position:relative;
+  }
+  .bar-chart-view.active{
+    display:block;
+  }
+  .bar-chart-container{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:auto;
+    background:var(--bg);
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .bar-chart-content{
+    display:flex;
+    flex-direction:row;
+    gap:8px;
+    align-items:flex-end;
     justify-content:center;
+    height:100%;
+    padding:20px;
+  }
+  .bar-chart-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex:1;
+    height:100%;
+    justify-content:flex-end;
+    position:relative;
+  }
+  .bar-chart-label{
+    position:absolute;
+    bottom:-30px;
+    font-size:12px;
+    font-weight:500;
+    color:var(--text);
+    text-align:center;
+    white-space:nowrap;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    transform:rotate(180deg);
+  }
+  .bar-chart-bar-container{
+    width:20px;
+    height:200px;
+    background:var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+  }
+  .bar-chart-bar-fill{
+    width:100%;
+    border-radius:4px;
+    transition:height 0.5s ease;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:4px;
+    font-size:10px;
+    font-weight:500;
+    color:#fff;
+  }
+  .pie-chart-container{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+  .pie-date-range{
+    position:absolute;
+    top:20px;
+    left:-200px;
+    text-align:center;
+    color:var(--text);
+    font-size:16px;
+    font-weight:600;
+    min-width:120px;
+    background:var(--axis-bg);
+    border-radius:8px;
+    padding:12px 16px;
+  }
+  .pie-date-range .range-title{
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .pie-date-range .range-dates{
+    line-height:1.3;
+    font-size:13px;
+  }
+  .pie-chart-svg{
+    width:400px;
+    height:400px;
+    transform:rotate(-90deg);
+  }
+  .pie-slice{
+    transition:opacity 0.2s ease;
+    cursor:pointer;
+  }
+  .pie-slice:hover{
+    opacity:0.8;
+  }
+  .pie-legend{
+    position:absolute;
+    right:-200px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:180px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--text);
+  }
+  .legend-color{
+    width:12px;
+    height:12px;
+    border-radius:2px;
+  }
+  .legend-item.shake{
+    animation:shake 0.5s ease-in-out;
+  }
+  @keyframes shake{
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
   }
   .wrap{
     width:min(1200px,98vw);
@@ -36,6 +421,26 @@
     border-radius:16px;
     overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,.35);
+    position:relative;
+  }
+  .chart-logo{
+    position:absolute;
+    top:16px;
+    right:16px;
+    width:32px;
+    height:32px;
+    z-index:10;
+    opacity:0.7;
+    transition:opacity 0.2s ease;
+  }
+  .chart-logo:hover{
+    opacity:1;
+  }
+  .logo-container{
+    position:fixed;
+    top:0px;
+    right:16px;
+    z-index:10;
   }
   .months{
     grid-column:2/3;
@@ -61,6 +466,25 @@
     grid-template-columns:auto 1fr;
     overflow:auto;
     position:relative;
+  }
+  .scrollzone::-webkit-scrollbar{
+    width:12px;
+    height:12px;
+  }
+  .scrollzone::-webkit-scrollbar-track{
+    background:var(--axis-bg);
+    border-radius:6px;
+  }
+  .scrollzone::-webkit-scrollbar-thumb{
+    background:var(--line);
+    border-radius:6px;
+    border:2px solid var(--axis-bg);
+  }
+  .scrollzone::-webkit-scrollbar-thumb:hover{
+    background:#2a3441;
+  }
+  .scrollzone::-webkit-scrollbar-corner{
+    background:var(--axis-bg);
   }
   .years{
     background:var(--axis-bg);
@@ -89,7 +513,7 @@
   }
   .cell:nth-child(12n){border-right:1px solid var(--line)}
   .overlay{
-    pointer-events:none;
+    pointer-events:auto;
     border:2px solid;
     border-radius:6px;
     position:relative;
@@ -104,6 +528,7 @@
     height:var(--bar);
     margin:var(--vpad) 0;
     background-clip:padding-box;
+    cursor:pointer;
   }
   .cuts{
     grid-column:1/3;
@@ -129,14 +554,154 @@
     top:0; bottom:0;
     border-left:1px solid var(--line);
   }
+  .tooltip{
+    position:fixed;
+    background:rgba(0,0,0,0.9);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:500;
+    white-space:nowrap;
+    pointer-events:none;
+    z-index:1000;
+    opacity:0;
+    transform:translateY(-100%) translateX(-50%);
+    transition:opacity 0.2s ease;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  }
+  .tooltip::after{
+    content:'';
+    position:absolute;
+    top:100%;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:rgba(0,0,0,0.9);
+  }
+  .tooltip.show{
+    opacity:1;
+  }
+  .error-modal{
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.8);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2000;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .error-modal.show{
+    opacity:1;
+    visibility:visible;
+  }
+  .error-content{
+    background:var(--cell-bg);
+    border:2px solid #e11d48;
+    border-radius:12px;
+    padding:24px;
+    max-width:500px;
+    max-height:80vh;
+    overflow-y:auto;
+    box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  }
+  .error-title{
+    color:#e11d48;
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .error-message{
+    color:var(--text);
+    line-height:1.5;
+    margin-bottom:16px;
+  }
+  .error-line{
+    background:rgba(225,29,72,0.1);
+    border:1px solid rgba(225,29,72,0.3);
+    border-radius:6px;
+    padding:12px;
+    font-family:monospace;
+    font-size:14px;
+    color:#e11d48;
+    margin:8px 0;
+    word-break:break-all;
+  }
+  .error-close{
+    background:#e11d48;
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.2s ease;
+  }
+  .error-close:hover{
+    background:#c41e3a;
+  }
   @media (max-width:700px){
     :root{ --bar:24px }
     .year,.month{font-size:.85rem}
+    .tooltip{font-size:11px;padding:6px 10px}
+    .error-content{padding:16px;margin:16px}
+    .error-title{font-size:16px}
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="app-container">
+    <div class="app-title">workalot</div>
+    <div class="bar-duration" id="barDuration"></div>
+    <div class="chart-icons">
+       <svg class="chart-icon active" id="barChartIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <rect x="3" y="4" width="18" height="16" fill="none" stroke="#e6e9f2" stroke-width="1" rx="2"/>
+         <line x1="3" y1="8" x2="21" y2="8" stroke="#e6e9f2" stroke-width="1"/>
+         <line x1="7" y1="4" x2="7" y2="8" stroke="#e6e9f2" stroke-width="1"/>
+         <line x1="17" y1="4" x2="17" y2="8" stroke="#e6e9f2" stroke-width="1"/>
+         <rect x="4" y="10" width="3" height="2" fill="#4f46e5" rx="0.5"/>
+         <rect x="8" y="10" width="4" height="2" fill="#16a34a" rx="0.5"/>
+         <rect x="13" y="10" width="2" height="2" fill="#e11d48" rx="0.5"/>
+         <rect x="16" y="10" width="3" height="2" fill="#ea580c" rx="0.5"/>
+         <rect x="4" y="13" width="2" height="2" fill="#0891b2" rx="0.5"/>
+         <rect x="7" y="13" width="5" height="2" fill="#7c3aed" rx="0.5"/>
+         <rect x="13" y="13" width="4" height="2" fill="#dc2626" rx="0.5"/>
+         <rect x="18" y="13" width="2" height="2" fill="#059669" rx="0.5"/>
+       </svg>
+      <svg class="chart-icon" id="pieChartIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="#e6e9f2" stroke-width="1"/>
+        <path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="#4f46e5"/>
+        <path d="M22 12 A10 10 0 0 1 12 22 L12 12 Z" fill="#16a34a"/>
+        <path d="M12 22 A10 10 0 0 1 2 12 L12 12 Z" fill="#e11d48"/>
+        <path d="M2 12 A10 10 0 0 1 12 2 L12 12 Z" fill="#ea580c"/>
+      </svg>
+       <svg class="chart-icon" id="ganttChartIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <rect x="2" y="4" width="20" height="2" fill="#4f46e5" rx="1"/>
+         <rect x="2" y="7" width="16" height="2" fill="#16a34a" rx="1"/>
+         <rect x="2" y="10" width="12" height="2" fill="#e11d48" rx="1"/>
+         <rect x="2" y="13" width="18" height="2" fill="#ea580c" rx="1"/>
+         <rect x="2" y="16" width="14" height="2" fill="#0891b2" rx="1"/>
+         <rect x="2" y="19" width="8" height="2" fill="#7c3aed" rx="1"/>
+         <line x1="2" y1="3" x2="2" y2="21" stroke="#6b7280" stroke-width="1"/>
+         <line x1="8" y1="3" x2="8" y2="21" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2"/>
+         <line x1="14" y1="3" x2="14" y2="21" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2"/>
+         <line x1="20" y1="3" x2="20" y2="21" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2"/>
+       </svg>
+       <svg class="chart-icon" id="separateBarChartIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <rect x="3" y="16" width="3" height="5" fill="#4f46e5" rx="1"/>
+         <rect x="7" y="12" width="3" height="9" fill="#16a34a" rx="1"/>
+         <rect x="11" y="8" width="3" height="13" fill="#e11d48" rx="1"/>
+         <rect x="15" y="14" width="3" height="7" fill="#ea580c" rx="1"/>
+         <rect x="19" y="10" width="3" height="11" fill="#0891b2" rx="1"/>
+       </svg>
+    </div>
+    <div class="wrap">
     <div class="months" id="months"></div>
     <div class="scrollzone">
       <div class="years" id="years"></div>
@@ -145,12 +710,53 @@
       </div>
       <div class="cuts" id="cuts"></div>
     </div>
+    <div class="tooltip" id="tooltip"></div>
   </div>
+  <div class="pie-chart-view" id="pieChartView">
+    <div class="pie-chart-container">
+      <div class="pie-date-range" id="pieDateRange">
+        <div class="range-title">Data Range</div>
+        <div class="range-dates" id="rangeDates"></div>
+      </div>
+      <svg class="pie-chart-svg" id="pieChartSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      </svg>
+      <div class="pie-legend" id="pieLegend">
+      </div>
+    </div>
+  </div>
+  <div class="gantt-chart-view" id="ganttChartView">
+    <div class="gantt-chart-container">
+      <div class="gantt-header">
+        <div class="gantt-timeline" id="ganttTimeline">
+          <div class="gantt-timeline-header" id="ganttTimelineHeader"></div>
+        </div>
+      </div>
+      <div class="gantt-content">
+        <div class="gantt-rows" id="ganttRows"></div>
+      </div>
+    </div>
+  </div>
+  <div class="bar-chart-view" id="barChartView">
+    <div class="bar-chart-container">
+      <div class="bar-chart-content" id="barChartContent">
+      </div>
+    </div>
+  </div>
+  </div>
+  <div class="error-modal" id="errorModal">
+    <div class="error-content">
+      <div class="error-title">
+        ⚠️ Format Error
+      </div>
+      <div class="error-message" id="errorMessage"></div>
+      <div class="error-line" id="errorLine"></div>
+      <button class="error-close" onclick="hideError()">Close</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
 <script>
   const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const startYear=1996;
-  const currentYear=new Date().getFullYear();
-  const colors=["#4f46e5","#16a34a","#e11d48","#ea580c","#0891b2","#a21caf","#b45309"];
+  const colors=["#4f46e5","#16a34a","#e11d48","#ea580c","#0891b2","#a21caf","#b45309","#dc2626","#059669","#7c3aed","#db2777","#0891b2","#ca8a04","#16a34a","#dc2626","#7c2d12","#1e40af","#be185d","#0f766e","#92400e","#581c87","#1f2937","#374151","#6b7280"];
   const MAX_LANES=3;
 
   const monthsEl=document.getElementById("months");
@@ -159,30 +765,76 @@
   const cutsEl=document.getElementById("cuts");
   const vcutsEl=document.getElementById("vcuts");
   const scrollzone=document.querySelector(".scrollzone");
+  const tooltipEl=document.getElementById("tooltip");
+  const errorModalEl=document.getElementById("errorModal");
+  const errorMessageEl=document.getElementById("errorMessage");
+  const errorLineEl=document.getElementById("errorLine");
+  const toastEl=document.getElementById("toast");
+  const barChartIcon=document.getElementById("barChartIcon");
+  const pieChartIcon=document.getElementById("pieChartIcon");
+  const ganttChartIcon=document.getElementById("ganttChartIcon");
+  const separateBarChartIcon=document.getElementById("separateBarChartIcon");
+  const wrapEl=document.querySelector(".wrap");
+  const pieChartView=document.getElementById("pieChartView");
+  const pieChartSvg=document.getElementById("pieChartSvg");
+  const pieLegend=document.getElementById("pieLegend");
+  const barChartView=document.getElementById("barChartView");
+  const barChartContent=document.getElementById("barChartContent");
+  const ganttChartView=document.getElementById("ganttChartView");
+  const ganttTimeline=document.getElementById("ganttTimeline");
+  const ganttTimelineHeader=document.getElementById("ganttTimelineHeader");
+  const ganttLabels=document.getElementById("ganttLabels");
+  const ganttRows=document.getElementById("ganttRows");
+  
+  let currentChartType='timeline';
+  let jobData=[];
+  let dataStartYear, dataEndYear; // Will be set based on actual data
 
-  monthNames.forEach(m=>{
-    const d=document.createElement("div");
-    d.className="month";
-    d.textContent=m;
-    monthsEl.appendChild(d);
-  });
+  function generateTimeline(startYear, endYear) {
+    // Clear existing content
+    monthsEl.innerHTML = '';
+    yearsEl.innerHTML = '';
+    gridEl.innerHTML = '';
+    
+    // Add months header
+    monthNames.forEach(m=>{
+      const d=document.createElement("div");
+      d.className="month";
+      d.textContent=m;
+      monthsEl.appendChild(d);
+    });
 
-  for(let y=currentYear;y>=startYear;y--){
-    const yEl=document.createElement("div");
-    yEl.className="year";
-    yEl.textContent=String(y);
-    yearsEl.appendChild(yEl);
-    const row=document.createElement("div");
-    row.className="row";
-    for(let m=0;m<12;m++){
-      const c=document.createElement("div");
-      c.className="cell";
-      row.appendChild(c);
+    // Generate years and grid rows
+    for(let y=endYear;y>=startYear;y--){
+      const yEl=document.createElement("div");
+      yEl.className="year";
+      yEl.textContent=String(y);
+      yearsEl.appendChild(yEl);
+      const row=document.createElement("div");
+      row.className="row";
+      for(let m=0;m<12;m++){
+        const c=document.createElement("div");
+        c.className="cell";
+        row.appendChild(c);
+      }
+      gridEl.appendChild(row);
     }
-    gridEl.appendChild(row);
   }
 
   function parseLine(line){
+    // Handle "Present", "Now", or "Current" (case-insensitive) as end date
+    const rxPresent=/^\s*([A-Za-z][\w\s\-\/&]+?)\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(present|now|current)\s*$/i;
+    const mPresent=line.match(rxPresent);
+    if(mPresent){
+      const hobby=mPresent[1].trim();
+      const sMonth=+mPresent[2], sDay=+mPresent[3], sYear=+mPresent[4];
+      const start=new Date(sYear,sMonth-1,sDay);
+      const end=new Date(); // Today's date
+      if(isNaN(start)) return null;
+      return {hobby,start,end,present:true};
+    }
+    
+    // Handle regular date range
     const rx=/^\s*([A-Za-z][\w\s\-\/&]+?)\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/;
     const m=line.match(rx);
     if(!m) return null;
@@ -192,20 +844,20 @@
     const start=new Date(sYear,sMonth-1,sDay);
     const end=new Date(eYear,eMonth-1,eDay);
     if(isNaN(start)||isNaN(end)) return null;
-    return {hobby,start,end};
+    return {hobby,start,end,present:false};
   }
 
   function clampToRange(date){
     let d=new Date(date);
-    if(date.getFullYear()<startYear) d=new Date(startYear,0,1);
-    if(date.getFullYear()>currentYear) d=new Date(currentYear,11,31);
+    if(date.getFullYear()<dataStartYear) d=new Date(dataStartYear,0,1);
+    if(date.getFullYear()>dataEndYear) d=new Date(dataEndYear,11,31);
     return d;
   }
 
   function monthSpanPerYear(start,end){
     const spans=[];
     const sY=start.getFullYear(), eY=end.getFullYear();
-    for(let y=Math.max(sY,startYear); y<=Math.min(eY,currentYear); y++){
+    for(let y=Math.max(sY,dataStartYear); y<=Math.min(eY,dataEndYear); y++){
       const startM=(y===sY)?start.getMonth():0;
       const endM=(y===eY)?end.getMonth():11;
       if(endM>=startM) spans.push({year:y,startM,endM});
@@ -213,7 +865,7 @@
     return spans;
   }
 
-  function idxFromYear(y){ return (currentYear-y)+1; }
+  function idxFromYear(y){ return (dataEndYear-y)+1; }
 
   function hexToRGBA(hex,alpha){
     const h=hex.replace('#','');
@@ -221,6 +873,360 @@
     const g=parseInt(h.length===3?h[1]+h[1]:h.slice(2,4),16);
     const b=parseInt(h.length===3?h[2]+h[2]:h.slice(4,6),16);
     return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function formatDate(date){
+    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+  }
+
+  function calculateDuration(startDate, endDate){
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays % 30;
+    
+    const parts = [];
+    if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`);
+    if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+    if (days > 0) parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+    
+    return parts.length > 0 ? parts.join(' ') : '0 days';
+  }
+
+  function showTooltip(event, hobby, startDate, endDate, present=false){
+    const rect=event.target.getBoundingClientRect();
+    const x=rect.left + rect.width/2;
+    const y=rect.top;
+    
+    const endDisplay = present ? 'Present' : formatDate(endDate);
+    const duration = present ? calculateDuration(startDate, new Date()) : calculateDuration(startDate, endDate);
+    const durationText = present ? `${duration} (ongoing)` : duration;
+    
+    tooltipEl.textContent=`${formatDate(startDate)} - ${endDisplay} (${durationText})`;
+    tooltipEl.style.left=`${x}px`;
+    tooltipEl.style.top=`${y}px`;
+    tooltipEl.classList.add('show');
+  }
+
+  function hideTooltip(){
+    tooltipEl.classList.remove('show');
+  }
+
+  function showError(lineNumber, lineContent, errorType){
+    const messages = {
+      'invalid-format': 'Invalid date format. Expected format: "Company Name MM/DD/YYYY - MM/DD/YYYY" or "Company Name MM/DD/YYYY - Present"',
+      'invalid-date': 'Invalid date. Please check that the dates are valid.',
+      'empty-line': 'Empty line found.',
+      'malformed': 'Line format is incorrect. Please check the syntax.'
+    };
+    
+    errorMessageEl.textContent = `Line ${lineNumber}: ${messages[errorType] || 'Unknown error'}`;
+    errorLineEl.textContent = `"${lineContent}"`;
+    errorModalEl.classList.add('show');
+  }
+
+  function hideError(){
+    errorModalEl.classList.remove('show');
+  }
+
+  function showToast(message){
+    toastEl.textContent = message;
+    toastEl.classList.add('show');
+    setTimeout(() => {
+      toastEl.classList.remove('show');
+    }, 2000);
+  }
+
+  function shakeLegendItem(jobName){
+    const legendItems=pieLegend.querySelectorAll('.legend-item');
+    legendItems.forEach(item=>{
+      const span=item.querySelector('span');
+      if(span && span.textContent.includes(jobName)){
+        item.classList.add('shake');
+        setTimeout(()=>{
+          item.classList.remove('shake');
+        },500);
+      }
+    });
+  }
+
+  function switchChartType(type){
+    currentChartType=type;
+    
+    // Update icon states
+    barChartIcon.classList.toggle('active', type==='timeline');
+    pieChartIcon.classList.toggle('active', type==='pie');
+    ganttChartIcon.classList.toggle('active', type==='gantt');
+    separateBarChartIcon.classList.toggle('active', type==='bar');
+    
+    // Show/hide views
+    wrapEl.style.display=type==='timeline'?'grid':'none';
+    pieChartView.classList.toggle('active', type==='pie');
+    ganttChartView.classList.toggle('active', type==='gantt');
+    barChartView.classList.toggle('active', type==='bar');
+    
+    // Show toast notification
+    const chartNames = {
+      'timeline': 'Timeline View',
+      'pie': 'Pie Chart View',
+      'gantt': 'Gantt Chart View',
+      'bar': 'Bar Chart View'
+    };
+    showToast(`Switched to ${chartNames[type]}`);
+    
+    if(type==='pie'){
+      renderPieChart();
+    } else if(type==='gantt'){
+      renderGanttChart();
+    } else if(type==='bar'){
+      renderBarChart();
+    }
+  }
+
+  function calculateJobTimeSpent(){
+    const jobTimes={};
+    
+    jobData.forEach(job=>{
+      const duration=job.end.getTime()-job.start.getTime();
+      const days=Math.ceil(duration/(1000*60*60*24));
+      
+      if(!jobTimes[job.hobby]){
+        jobTimes[job.hobby]={totalDays:0, color:job.color};
+      }
+      jobTimes[job.hobby].totalDays+=days;
+    });
+    
+    return Object.entries(jobTimes).map(([name,data],index)=>({
+      name,
+      days:data.totalDays,
+      color:colors[index % colors.length]
+    })).sort((a,b)=>b.days-a.days);
+  }
+
+  function renderPieChart(){
+    const jobTimes=calculateJobTimeSpent();
+    const totalDays=jobTimes.reduce((sum,job)=>sum+job.days,0);
+    
+    // Calculate date range
+    const allDates=jobData.map(job=>[job.start,job.end]).flat();
+    const earliestDate=new Date(Math.min(...allDates.map(d=>d.getTime())));
+    const latestDate=new Date(Math.max(...allDates.map(d=>d.getTime())));
+    
+    // Update date range display
+    const rangeDatesEl=document.getElementById("rangeDates");
+    rangeDatesEl.innerHTML=`
+      ${formatDate(earliestDate)}<br>
+      to<br>
+      ${formatDate(latestDate)}
+    `;
+    
+    // Clear previous content
+    pieChartSvg.innerHTML='';
+    pieLegend.innerHTML='';
+    
+    let currentAngle=0;
+    const radius=80;
+    const centerX=100;
+    const centerY=100;
+    
+    jobTimes.forEach((job,i)=>{
+      const percentage=job.days/totalDays;
+      const angle=percentage*360;
+      
+      // Create pie slice
+      const startAngle=currentAngle;
+      const endAngle=currentAngle+angle;
+      
+      const x1=centerX+radius*Math.cos(startAngle*Math.PI/180);
+      const y1=centerY+radius*Math.sin(startAngle*Math.PI/180);
+      const x2=centerX+radius*Math.cos(endAngle*Math.PI/180);
+      const y2=centerY+radius*Math.sin(endAngle*Math.PI/180);
+      
+      const largeArcFlag=angle>180?1:0;
+      
+      const pathData=`M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+      
+      const slice=document.createElementNS('http://www.w3.org/2000/svg','path');
+      slice.setAttribute('d',pathData);
+      slice.setAttribute('fill',job.color);
+      slice.setAttribute('class','pie-slice');
+      slice.setAttribute('data-job',job.name);
+      slice.setAttribute('data-days',job.days);
+      slice.setAttribute('data-percentage',(percentage*100).toFixed(1));
+      
+      pieChartSvg.appendChild(slice);
+      
+      // Create legend item
+      const legendItem=document.createElement('div');
+      legendItem.className='legend-item';
+      legendItem.innerHTML=`
+        <div class="legend-color" style="background:${job.color}"></div>
+        <span>${job.name}: ${job.days} days (${(percentage*100).toFixed(1)}%)</span>
+      `;
+      pieLegend.appendChild(legendItem);
+      
+      currentAngle+=angle;
+    });
+    
+    // Add hover tooltips and click events for pie slices
+    pieChartSvg.querySelectorAll('.pie-slice').forEach(slice=>{
+      slice.addEventListener('mouseenter',(e)=>{
+        const job=e.target.getAttribute('data-job');
+        const days=e.target.getAttribute('data-days');
+        const percentage=e.target.getAttribute('data-percentage');
+        showTooltip(e,job,new Date(),new Date(),false,`${days} days (${percentage}%)`);
+      });
+      slice.addEventListener('mouseleave',hideTooltip);
+      
+      slice.addEventListener('click',(e)=>{
+        const job=e.target.getAttribute('data-job');
+        shakeLegendItem(job);
+      });
+    });
+  }
+
+  function renderBarChart(){
+    barChartContent.innerHTML='';
+    
+    const jobTimes=calculateJobTimeSpent();
+    const totalDays=jobTimes.reduce((sum,job)=>sum+job.days,0);
+    
+    // Find the maximum days to normalize the bars
+    const maxDays=Math.max(...jobTimes.map(job=>job.days));
+    
+    // Sort by original order (chronological) with oldest first (left to right)
+    const sortedJobTimes = jobTimes.sort((a, b) => {
+      const aIndex = jobData.findIndex(job => job.hobby === a.name);
+      const bIndex = jobData.findIndex(job => job.hobby === b.name);
+      return bIndex - aIndex; // Reverse: oldest first (left to right)
+    });
+    
+    sortedJobTimes.forEach((job,index)=>{
+      const percentage=(job.days/totalDays)*100;
+      const normalizedHeight=(job.days/maxDays)*100; // Scale to full height
+      
+      const itemEl=document.createElement('div');
+      itemEl.className='bar-chart-item';
+      
+      const labelEl=document.createElement('div');
+      labelEl.className='bar-chart-label';
+      labelEl.textContent=job.name;
+      
+      const containerEl=document.createElement('div');
+      containerEl.className='bar-chart-bar-container';
+      
+      const fillEl=document.createElement('div');
+      fillEl.className='bar-chart-bar-fill';
+      fillEl.style.backgroundColor=job.color;
+      fillEl.style.height=`${normalizedHeight}%`;
+      fillEl.textContent=`${Math.round(percentage)}%`;
+      
+      containerEl.appendChild(fillEl);
+      itemEl.appendChild(labelEl);
+      itemEl.appendChild(containerEl);
+      barChartContent.appendChild(itemEl);
+    });
+  }
+
+  function renderGanttChart(){
+    // Clear previous content
+    ganttTimelineHeader.innerHTML = '';
+    ganttRows.innerHTML = '';
+    
+    if (jobData.length === 0) return;
+    
+    // Calculate date range
+    const allDates = jobData.map(job => [job.start, job.end]).flat();
+    const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const latestDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    // Generate years between earliest and latest date
+    const years = [];
+    const startYear = earliestDate.getFullYear();
+    const endYear = latestDate.getFullYear();
+    
+    for (let year = startYear; year <= endYear; year++) {
+      years.push(year);
+    }
+    
+    // Create timeline header
+    years.forEach(year => {
+      const yearEl = document.createElement('div');
+      yearEl.className = 'gantt-month';
+      yearEl.textContent = year.toString();
+      ganttTimelineHeader.appendChild(yearEl);
+    });
+    
+    // Create job rows
+    jobData.forEach((job, index) => {
+      // Create row
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gantt-row';
+      
+      // Create job bar
+      const barEl = document.createElement('div');
+      barEl.className = 'gantt-bar';
+      barEl.style.backgroundColor = colors[index % colors.length];
+      
+      // Calculate position and width based on years
+      const startYear = job.start.getFullYear();
+      const endYear = job.end.getFullYear();
+      
+      const startIndex = years.indexOf(startYear);
+      const endIndex = years.indexOf(endYear);
+      
+      if (startIndex !== -1 && endIndex !== -1) {
+        const left = (startIndex * 80) + 'px';
+        const width = ((endIndex - startIndex + 1) * 80) + 'px';
+        
+        barEl.style.left = left;
+        barEl.style.width = width;
+        barEl.textContent = job.hobby;
+        
+        // Add tooltip
+        barEl.addEventListener('mouseenter', (e) => {
+          const duration = calculateDuration(job.start, job.end, job.present);
+          showTooltip(e, job.hobby, job.start, job.end, job.present, duration);
+        });
+        barEl.addEventListener('mouseleave', hideTooltip);
+      }
+      
+      rowEl.appendChild(barEl);
+      ganttRows.appendChild(rowEl);
+    });
+    
+    // Add grid lines
+    const gridEl = document.createElement('div');
+    gridEl.className = 'gantt-grid';
+    
+    years.forEach((year, index) => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'gantt-grid-line';
+      lineEl.style.left = (index * 80) + 'px';
+      gridEl.appendChild(lineEl);
+    });
+    
+    ganttRows.appendChild(gridEl);
+  }
+  
+  function calculateDuration(start, end, present) {
+    const startDate = new Date(start);
+    const endDate = present ? new Date() : new Date(end);
+    
+    const years = endDate.getFullYear() - startDate.getFullYear();
+    const months = endDate.getMonth() - startDate.getMonth();
+    const days = endDate.getDate() - startDate.getDate();
+    
+    let result = '';
+    if (years > 0) result += `${years} year${years > 1 ? 's' : ''} `;
+    if (months > 0) result += `${months} month${months > 1 ? 's' : ''} `;
+    if (days > 0) result += `${days} day${days > 1 ? 's' : ''}`;
+    
+    return result.trim();
   }
 
   function chooseLane(occ,year,startM,endM){
@@ -242,7 +1248,7 @@
     }
   }
 
-  function drawRange(hobby,color,start,end,occ){
+  function drawRange(hobby,color,start,end,occ,present=false){
     const spans=monthSpanPerYear(start,end);
     spans.forEach(seg=>{
       const row=idxFromYear(seg.year);
@@ -258,8 +1264,16 @@
       block.style.borderColor=color;
       block.style.background=hexToRGBA(color,0.18);
       block.style.alignSelf = lane===0 ? "start" : (lane===1 ? "center" : "end");
+      
+      // Add hover event handlers for tooltip
+      block.addEventListener('mouseenter', (e) => showTooltip(e, hobby, start, end, present));
+      block.addEventListener('mouseleave', hideTooltip);
+      
       gridEl.appendChild(block);
     });
+    
+    // Store job data for pie chart
+    jobData.push({hobby,start,end,present,color});
   }
 
   function normalizeToMonthBounds(d,isStart){
@@ -272,7 +1286,7 @@
     const vpad=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--vpad'))||2;
     const perLane=bar+2*vpad;
     const rowHeight=3*perLane;
-    const rows=currentYear-startYear+1;
+    const rows=dataEndYear-dataStartYear+1;
     const spec=`repeat(${rows}, ${rowHeight}px)`;
     yearsEl.style.gridTemplateRows=spec;
     gridEl.style.gridTemplateRows=spec;
@@ -310,26 +1324,109 @@
   function process(text){
     const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
     const occ={};
+    let hasErrors = false;
+    
+    // Clear previous job data
+    jobData=[];
+    
+    // First pass: parse all data to determine the range
+    const parsedJobs = [];
     lines.forEach((line,i)=>{
+      const lineNumber = i + 1;
+      
+      // Check for empty lines
+      if(!line.trim()){
+        showError(lineNumber, line, 'empty-line');
+        hasErrors = true;
+        return;
+      }
+      
       const parsed=parseLine(line);
-      if(!parsed) return;
-      let {hobby,start,end}=parsed;
-      if(end<start){const t=start;start=end;end=t;}
-      start=clampToRange(start);
-      end=clampToRange(end);
-      start=normalizeToMonthBounds(start,true);
-      end=normalizeToMonthBounds(end,false);
-      const color=colors[i%colors.length];
-      drawRange(hobby,color,start,end,occ);
+      if(!parsed) {
+        showError(lineNumber, line, 'invalid-format');
+        hasErrors = true;
+        return;
+      }
+      
+      let {hobby,start,end,present}=parsed;
+      
+      // Check for invalid dates
+      if(isNaN(start) || isNaN(end)){
+        showError(lineNumber, line, 'invalid-date');
+        hasErrors = true;
+        return;
+      }
+      
+      parsedJobs.push({hobby,start,end,present,colorIndex:i});
     });
-    applyFixedRowHeight();
-    buildVerticalCuts();
+    
+    // Only proceed if no errors
+    if(!hasErrors && parsedJobs.length > 0){
+      // Calculate data range
+      const allDates = parsedJobs.map(job => [job.start, job.end]).flat();
+      dataStartYear = Math.min(...allDates.map(d => d.getFullYear()));
+      dataEndYear = Math.max(...allDates.map(d => d.getFullYear()));
+      
+      // Generate timeline based on data range
+      generateTimeline(dataStartYear, dataEndYear);
+      
+      // Second pass: process jobs and draw ranges
+      parsedJobs.forEach((job,i)=>{
+        let {hobby,start,end,present}=job;
+        
+        if(end<start){const t=start;start=end;end=t;}
+        start=clampToRange(start);
+        end=clampToRange(end);
+        start=normalizeToMonthBounds(start,true);
+        end=normalizeToMonthBounds(end,false);
+        const color=colors[job.colorIndex % colors.length];
+        drawRange(hobby,color,start,end,occ,present);
+      });
+      
+      applyFixedRowHeight();
+      buildVerticalCuts();
+      
+      // Update bar chart duration display
+      updateBarDuration();
+    } else if(!hasErrors && parsedJobs.length === 0) {
+      // No data, show default range
+      dataStartYear = new Date().getFullYear() - 5;
+      dataEndYear = new Date().getFullYear();
+      generateTimeline(dataStartYear, dataEndYear);
+      applyFixedRowHeight();
+      buildVerticalCuts();
+    }
+  }
+
+  function updateBarDuration(){
+    if(jobData.length === 0) return;
+    
+    const allDates=jobData.map(job=>[job.start,job.end]).flat();
+    const earliestDate=new Date(Math.min(...allDates.map(d=>d.getTime())));
+    const latestDate=new Date(Math.max(...allDates.map(d=>d.getTime())));
+    const totalDuration = calculateDuration(earliestDate, latestDate);
+    
+    const barDurationEl=document.getElementById("barDuration");
+    barDurationEl.textContent = totalDuration;
   }
 
   fetch('history.txt',{cache:'no-store'})
     .then(r=>r.ok?r.text():Promise.reject(new Error('Cannot load history.txt')))
     .then(process)
-    .catch(()=>{ applyFixedRowHeight(); buildVerticalCuts(); });
+    .catch(()=>{ 
+      // If no data file, show default range
+      dataStartYear = new Date().getFullYear() - 5;
+      dataEndYear = new Date().getFullYear();
+      generateTimeline(dataStartYear, dataEndYear);
+      applyFixedRowHeight(); 
+      buildVerticalCuts(); 
+    });
+
+  // Add event listeners for chart switching
+  barChartIcon.addEventListener('click',()=>switchChartType('timeline'));
+  pieChartIcon.addEventListener('click',()=>switchChartType('pie'));
+  ganttChartIcon.addEventListener('click',()=>switchChartType('gantt'));
+  separateBarChartIcon.addEventListener('click',()=>switchChartType('bar'));
 
   window.addEventListener('resize', buildVerticalCuts);
   const ro=new ResizeObserver(buildVerticalCuts);
