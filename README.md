@@ -1,8 +1,9 @@
 # Workalot
-
-![Workalot Logo](logo.png)
-
 a timeline visualization tool for tracking work history across multiple chart types.
+
+<img width="70%" alt="image" src="https://github.com/user-attachments/assets/1120dd9c-836b-46db-91e9-a545446ae177" />
+
+
 
 ## Features
 
@@ -93,3 +94,6 @@ Each line should follow this pattern:
 - Modern web browser
 - Local server (Python, Node.js, or VS Code Live Server) for development
 
+<div align="center">
+  <img src="logo.png" width="40%"/>
+</div>
