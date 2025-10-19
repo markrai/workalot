@@ -1,4 +1,4 @@
-# Workalot
+# Workalot v1.0
 a timeline visualization tool for tracking work history across multiple chart types.
 
 <img width="70%" alt="image" src="https://github.com/user-attachments/assets/1120dd9c-836b-46db-91e9-a545446ae177" />
