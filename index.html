@@ -278,19 +278,44 @@
     display:flex;
     flex-direction:column;
     position:relative;
-    overflow:auto;
+    overflow:hidden;
     background:var(--bg);
     border-radius:8px;
     border:1px solid var(--line);
+    justify-content:center;
+    align-items:center;
   }
   .bar-chart-content{
     display:flex;
+    flex-direction:column;
+    height:80%;
+    width:90%;
+    padding:20px;
+  }
+  .bar-chart-times-area{
+    display:flex;
     flex-direction:row;
-    gap:8px;
+    gap:12px;
+    justify-content:center;
+    height:25px;
+    align-items:center;
+  }
+  .bar-chart-bars-area{
+    display:flex;
+    flex-direction:row;
+    gap:12px;
     align-items:flex-end;
     justify-content:center;
-    height:100%;
-    padding:20px;
+    flex:1;
+    padding:0 0 20px 0;
+  }
+  .bar-chart-labels-area{
+    display:flex;
+    flex-direction:row;
+    gap:12px;
+    justify-content:center;
+    height:60px;
+    align-items:center;
   }
   .bar-chart-item{
     display:flex;
@@ -299,11 +324,8 @@
     flex:1;
     height:100%;
     justify-content:flex-end;
-    position:relative;
   }
   .bar-chart-label{
-    position:absolute;
-    bottom:-30px;
     font-size:12px;
     font-weight:500;
     color:var(--text);
@@ -312,10 +334,28 @@
     writing-mode:vertical-rl;
     text-orientation:mixed;
     transform:rotate(180deg);
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .bar-chart-time{
+    font-size:12px;
+    font-weight:500;
+    color:var(--muted);
+    text-align:center;
+    white-space:nowrap;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    transform:rotate(180deg);
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
   .bar-chart-bar-container{
-    width:20px;
-    height:200px;
+    width:24px;
+    height:300px;
     background:var(--line);
     border-radius:4px;
     overflow:hidden;
@@ -331,9 +371,9 @@
     display:flex;
     align-items:flex-end;
     justify-content:center;
-    padding-bottom:4px;
-    font-size:10px;
-    font-weight:500;
+    padding-bottom:6px;
+    font-size:11px;
+    font-weight:600;
     color:#fff;
   }
   .pie-chart-container{
@@ -739,6 +779,12 @@
   <div class="bar-chart-view" id="barChartView">
     <div class="bar-chart-container">
       <div class="bar-chart-content" id="barChartContent">
+        <div class="bar-chart-times-area" id="barChartTimesArea">
+        </div>
+        <div class="bar-chart-bars-area" id="barChartBarsArea">
+        </div>
+        <div class="bar-chart-labels-area" id="barChartLabelsArea">
+        </div>
       </div>
     </div>
   </div>
@@ -780,6 +826,9 @@
   const pieLegend=document.getElementById("pieLegend");
   const barChartView=document.getElementById("barChartView");
   const barChartContent=document.getElementById("barChartContent");
+  const barChartTimesArea=document.getElementById("barChartTimesArea");
+  const barChartBarsArea=document.getElementById("barChartBarsArea");
+  const barChartLabelsArea=document.getElementById("barChartLabelsArea");
   const ganttChartView=document.getElementById("ganttChartView");
   const ganttTimeline=document.getElementById("ganttTimeline");
   const ganttTimelineHeader=document.getElementById("ganttTimelineHeader");
@@ -877,6 +926,19 @@
 
   function formatDate(date){
     return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+  }
+
+  function formatDurationFromDays(days){
+    const years = Math.floor(days / 365);
+    const months = Math.floor((days % 365) / 30);
+    const remainingDays = days % 30;
+    
+    const parts = [];
+    if (years > 0) parts.push(`${years}y`);
+    if (months > 0) parts.push(`${months}m`);
+    if (remainingDays > 0) parts.push(`${remainingDays}d`);
+    
+    return parts.length > 0 ? parts.join(' ') : '0d';
   }
 
   function calculateDuration(startDate, endDate){
@@ -1090,7 +1152,9 @@
   }
 
   function renderBarChart(){
-    barChartContent.innerHTML='';
+    barChartTimesArea.innerHTML='';
+    barChartBarsArea.innerHTML='';
+    barChartLabelsArea.innerHTML='';
     
     const jobTimes=calculateJobTimeSpent();
     const totalDays=jobTimes.reduce((sum,job)=>sum+job.days,0);
@@ -1109,15 +1173,17 @@
       const percentage=(job.days/totalDays)*100;
       const normalizedHeight=(job.days/maxDays)*100; // Scale to full height
       
-      const itemEl=document.createElement('div');
-      itemEl.className='bar-chart-item';
+      // Create time label
+      const timeEl=document.createElement('div');
+      timeEl.className='bar-chart-time';
+      timeEl.textContent=formatDurationFromDays(job.days);
+      timeEl.style.flex='1';
+      barChartTimesArea.appendChild(timeEl);
       
-      const labelEl=document.createElement('div');
-      labelEl.className='bar-chart-label';
-      labelEl.textContent=job.name;
-      
-      const containerEl=document.createElement('div');
-      containerEl.className='bar-chart-bar-container';
+      // Create bar container
+      const barContainerEl=document.createElement('div');
+      barContainerEl.className='bar-chart-bar-container';
+      barContainerEl.style.flex='1';
       
       const fillEl=document.createElement('div');
       fillEl.className='bar-chart-bar-fill';
@@ -1125,10 +1191,15 @@
       fillEl.style.height=`${normalizedHeight}%`;
       fillEl.textContent=`${Math.round(percentage)}%`;
       
-      containerEl.appendChild(fillEl);
-      itemEl.appendChild(labelEl);
-      itemEl.appendChild(containerEl);
-      barChartContent.appendChild(itemEl);
+      barContainerEl.appendChild(fillEl);
+      barChartBarsArea.appendChild(barContainerEl);
+      
+      // Create label with same flex properties
+      const labelEl=document.createElement('div');
+      labelEl.className='bar-chart-label';
+      labelEl.textContent=job.name;
+      labelEl.style.flex='1';
+      barChartLabelsArea.appendChild(labelEl);
     });
   }
 
