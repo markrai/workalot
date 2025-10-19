@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  workalot:
+    build: .
+    ports:
+      - "8080:80"
+    container_name: workalot-app
+    restart: unless-stopped

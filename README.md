@@ -45,6 +45,18 @@ a timeline visualization tool for tracking work history across multiple chart ty
 
 ## Deployment
 
+**Docker (Recommended):**
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build and run manually
+docker build -t workalot .
+docker run -p 8080:80 workalot
+```
+
+Then open `http://localhost:8080` in your browser.
+
 **Cloudflare Pages**: This project works perfectly when deployed to Cloudflare Pages:
 
 1. Push your code to a Git repository (GitHub, GitLab, etc.)
@@ -68,4 +80,16 @@ Each line should follow this pattern:
 - **Pie Chart**: Proportional time spent visualization
 - **Gantt Chart**: Year-based timeline bars
 - **Bar Chart**: Duration comparison with chronological ordering
+
+## Quick Start with Docker
+
+1. Clone the repository
+2. Run `docker-compose up -d`
+3. Open `http://localhost:8080`
+
+## Requirements
+
+- Docker and Docker Compose (for containerized deployment)
+- Modern web browser
+- Local server (Python, Node.js, or VS Code Live Server) for development
 
