@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Timeline Grid with History Overlay</title>
+<style>
+  :root{
+    --axis-bg:#0b0f19;
+    --cell-bg:#0f1425;
+    --line:#1e2742;
+    --text:#e6e9f2;
+    --muted:#99a2c2;
+    --bar:28px;
+    --vpad:2px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:#0a0e18;
+    color:var(--text);
+    font:14px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    height:100vh;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+  }
+  .wrap{
+    width:min(1200px,98vw);
+    height:min(90vh,900px);
+    margin:auto;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    grid-template-columns:auto 1fr;
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .months{
+    grid-column:2/3;
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    background:var(--axis-bg);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:2;
+    padding-left:10px;
+  }
+  .month{
+    padding:.6rem .4rem;
+    text-align:center;
+    color:var(--muted);
+    font-weight:600;
+    letter-spacing:.04em;
+  }
+  .scrollzone{
+    grid-column:1/3;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    overflow:auto;
+    position:relative;
+  }
+  .years{
+    background:var(--axis-bg);
+    border-right:1px solid var(--line);
+    display:grid;
+    z-index:3;
+  }
+  .year{
+    padding:.35rem .6rem;
+    color:var(--muted);
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    background:var(--cell-bg);
+    position:relative;
+    z-index:1;
+  }
+  .row{display:contents}
+  .cell{
+    min-height:0;
+    border-left:1px solid var(--line);
+  }
+  .cell:nth-child(12n){border-right:1px solid var(--line)}
+  .overlay{
+    pointer-events:none;
+    border:2px solid;
+    border-radius:6px;
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:600;
+    font-size:.85rem;
+    color:#fff;
+    text-shadow:0 1px 2px rgba(0,0,0,.7);
+    height:var(--bar);
+    margin:var(--vpad) 0;
+    background-clip:padding-box;
+  }
+  .cuts{
+    grid-column:1/3;
+    position:absolute;
+    left:0; right:0;
+    top:0;
+    pointer-events:none;
+    z-index:4;
+  }
+  .cuts div{
+    position:absolute;
+    left:0; right:0;
+    border-top:1px solid var(--line);
+  }
+  .vcuts{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:5;
+  }
+  .vcuts .vline{
+    position:absolute;
+    top:0; bottom:0;
+    border-left:1px solid var(--line);
+  }
+  @media (max-width:700px){
+    :root{ --bar:24px }
+    .year,.month{font-size:.85rem}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="months" id="months"></div>
+    <div class="scrollzone">
+      <div class="years" id="years"></div>
+      <div class="grid" id="grid">
+        <div class="vcuts" id="vcuts"></div>
+      </div>
+      <div class="cuts" id="cuts"></div>
+    </div>
+  </div>
+<script>
+  const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const startYear=1996;
+  const currentYear=new Date().getFullYear();
+  const colors=["#4f46e5","#16a34a","#e11d48","#ea580c","#0891b2","#a21caf","#b45309"];
+  const MAX_LANES=3;
+
+  const monthsEl=document.getElementById("months");
+  const yearsEl=document.getElementById("years");
+  const gridEl=document.getElementById("grid");
+  const cutsEl=document.getElementById("cuts");
+  const vcutsEl=document.getElementById("vcuts");
+  const scrollzone=document.querySelector(".scrollzone");
+
+  monthNames.forEach(m=>{
+    const d=document.createElement("div");
+    d.className="month";
+    d.textContent=m;
+    monthsEl.appendChild(d);
+  });
+
+  for(let y=currentYear;y>=startYear;y--){
+    const yEl=document.createElement("div");
+    yEl.className="year";
+    yEl.textContent=String(y);
+    yearsEl.appendChild(yEl);
+    const row=document.createElement("div");
+    row.className="row";
+    for(let m=0;m<12;m++){
+      const c=document.createElement("div");
+      c.className="cell";
+      row.appendChild(c);
+    }
+    gridEl.appendChild(row);
+  }
+
+  function parseLine(line){
+    const rx=/^\s*([A-Za-z][\w\s\-\/&]+?)\s+(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/;
+    const m=line.match(rx);
+    if(!m) return null;
+    const hobby=m[1].trim();
+    const sMonth=+m[2], sDay=+m[3], sYear=+m[4];
+    const eMonth=+m[5], eDay=+m[6], eYear=+m[7];
+    const start=new Date(sYear,sMonth-1,sDay);
+    const end=new Date(eYear,eMonth-1,eDay);
+    if(isNaN(start)||isNaN(end)) return null;
+    return {hobby,start,end};
+  }
+
+  function clampToRange(date){
+    let d=new Date(date);
+    if(date.getFullYear()<startYear) d=new Date(startYear,0,1);
+    if(date.getFullYear()>currentYear) d=new Date(currentYear,11,31);
+    return d;
+  }
+
+  function monthSpanPerYear(start,end){
+    const spans=[];
+    const sY=start.getFullYear(), eY=end.getFullYear();
+    for(let y=Math.max(sY,startYear); y<=Math.min(eY,currentYear); y++){
+      const startM=(y===sY)?start.getMonth():0;
+      const endM=(y===eY)?end.getMonth():11;
+      if(endM>=startM) spans.push({year:y,startM,endM});
+    }
+    return spans;
+  }
+
+  function idxFromYear(y){ return (currentYear-y)+1; }
+
+  function hexToRGBA(hex,alpha){
+    const h=hex.replace('#','');
+    const r=parseInt(h.length===3?h[0]+h[0]:h.slice(0,2),16);
+    const g=parseInt(h.length===3?h[1]+h[1]:h.slice(2,4),16);
+    const b=parseInt(h.length===3?h[2]+h[2]:h.slice(4,6),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function chooseLane(occ,year,startM,endM){
+    for(let lane=0; lane<MAX_LANES; lane++){
+      let ok=true;
+      for(let m=startM; m<=endM; m++){
+        if(occ[year]?.[m]?.[lane]){ ok=false; break; }
+      }
+      if(ok) return lane;
+    }
+    return MAX_LANES-1;
+  }
+
+  function markLane(occ,year,startM,endM,lane){
+    if(!occ[year]) occ[year]={};
+    for(let m=startM; m<=endM; m++){
+      if(!occ[year][m]) occ[year][m]=[];
+      occ[year][m][lane]=true;
+    }
+  }
+
+  function drawRange(hobby,color,start,end,occ){
+    const spans=monthSpanPerYear(start,end);
+    spans.forEach(seg=>{
+      const row=idxFromYear(seg.year);
+      const colStart=seg.startM+1;
+      const colEnd=seg.endM+1;
+      const lane=chooseLane(occ,seg.year,seg.startM,seg.endM);
+      markLane(occ,seg.year,seg.startM,seg.endM,lane);
+      const block=document.createElement("div");
+      block.className="overlay";
+      block.textContent=hobby;
+      block.style.gridRow=`${row} / ${row+1}`;
+      block.style.gridColumn=`${colStart} / ${colEnd+1}`;
+      block.style.borderColor=color;
+      block.style.background=hexToRGBA(color,0.18);
+      block.style.alignSelf = lane===0 ? "start" : (lane===1 ? "center" : "end");
+      gridEl.appendChild(block);
+    });
+  }
+
+  function normalizeToMonthBounds(d,isStart){
+    const y=d.getFullYear(), m=d.getMonth();
+    return isStart?new Date(y,m,1):new Date(y,m+1,0,23,59,59,999);
+  }
+
+  function applyFixedRowHeight(){
+    const bar=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar'))||28;
+    const vpad=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--vpad'))||2;
+    const perLane=bar+2*vpad;
+    const rowHeight=3*perLane;
+    const rows=currentYear-startYear+1;
+    const spec=`repeat(${rows}, ${rowHeight}px)`;
+    yearsEl.style.gridTemplateRows=spec;
+    gridEl.style.gridTemplateRows=spec;
+    cutsEl.innerHTML='';
+    for(let i=0;i<=rows;i++){
+      const line=document.createElement('div');
+      line.style.top=`${i*rowHeight}px`;
+      cutsEl.appendChild(line);
+    }
+    cutsEl.style.height=`${rows*rowHeight}px`;
+  }
+
+  function buildVerticalCuts(){
+    vcutsEl.innerHTML='';
+    const cells=gridEl.querySelectorAll('.cell');
+    if(cells.length<12) return;
+    const gridRect=gridEl.getBoundingClientRect();
+    const firstRow=[...cells].slice(0,12);
+    for(let i=1;i<12;i++){
+      const r=firstRow[i].getBoundingClientRect();
+      const x=r.left-gridRect.left;
+      const v=document.createElement('div');
+      v.className='vline';
+      v.style.left=`${x}px`;
+      vcutsEl.appendChild(v);
+    }
+    const lastRect=firstRow[11].getBoundingClientRect();
+    const rightX=lastRect.right-gridRect.left;
+    const rightLine=document.createElement('div');
+    rightLine.className='vline';
+    rightLine.style.left=`${rightX}px`;
+    vcutsEl.appendChild(rightLine);
+  }
+
+  function process(text){
+    const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    const occ={};
+    lines.forEach((line,i)=>{
+      const parsed=parseLine(line);
+      if(!parsed) return;
+      let {hobby,start,end}=parsed;
+      if(end<start){const t=start;start=end;end=t;}
+      start=clampToRange(start);
+      end=clampToRange(end);
+      start=normalizeToMonthBounds(start,true);
+      end=normalizeToMonthBounds(end,false);
+      const color=colors[i%colors.length];
+      drawRange(hobby,color,start,end,occ);
+    });
+    applyFixedRowHeight();
+    buildVerticalCuts();
+  }
+
+  fetch('history.txt',{cache:'no-store'})
+    .then(r=>r.ok?r.text():Promise.reject(new Error('Cannot load history.txt')))
+    .then(process)
+    .catch(()=>{ applyFixedRowHeight(); buildVerticalCuts(); });
+
+  window.addEventListener('resize', buildVerticalCuts);
+  const ro=new ResizeObserver(buildVerticalCuts);
+  ro.observe(gridEl);
+  ro.observe(scrollzone);
+</script>
+</body>
+</html>
