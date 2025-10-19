@@ -817,10 +817,74 @@
   }
   @media (max-width:700px){
     :root{ --bar:24px }
+    body{ padding-top:56px; font-size:14px }
     .year,.month{font-size:.85rem}
-    .tooltip{font-size:11px;padding:6px 10px}
+    .tooltip{font-size:11px;padding:6px 10px;max-width:90vw}
+    .toast{ bottom:calc(12px + env(safe-area-inset-bottom)) }
     .error-content{padding:16px;margin:16px}
     .error-title{font-size:16px}
+
+    /* Top controls: keep visible and accessible */
+    .app-title{
+      position:fixed;
+      top:calc(8px + env(safe-area-inset-top));
+      left:12px;
+      font-size:18px;
+    }
+    .chart-icons{
+      position:fixed;
+      top:calc(8px + env(safe-area-inset-top));
+      right:12px;
+      gap:6px;
+      background:rgba(11,15,25,0.65);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 8px;
+      backdrop-filter:blur(6px);
+    }
+    .upload-icon,.chart-icon{ width:28px; height:28px }
+    .logo-container{ display:none }
+    .bar-duration{
+      position:static;
+      transform:none;
+      margin-top:8px;
+      font-size:14px;
+      text-align:center;
+    }
+
+    /* Pie chart: stack legend below, center range */
+    .pie-chart-view{ width:100%; height:auto; min-height:70vh }
+    .pie-chart-svg{ width:clamp(220px,78vw,320px); height:clamp(220px,78vw,320px) }
+    .pie-date-range{
+      position:static;
+      top:auto; left:auto; transform:none;
+      margin:8px 0 12px;
+      font-size:18px;
+    }
+    .pie-date-range .range-title{ font-size:14px; margin-bottom:4px }
+    .pie-date-range .range-dates{ font-size:16px }
+    .pie-legend{
+      position:static; right:auto; top:auto; transform:none;
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:6px; min-width:0; width:100%; margin-top:12px; padding:0 8px;
+    }
+    .legend-item{ font-size:11px }
+
+    /* Gantt: tighter rows and columns */
+    .gantt-month{ min-width:60px; padding:6px 2px }
+    .gantt-row{ height:44px }
+    .gantt-bar{ height:24px; font-size:11px }
+
+    /* Bar chart: reduce overall height and spacing */
+    .bar-chart-content{ height:75%; width:92%; padding:12px }
+    .bar-chart-times-area{ height:20px; gap:8px }
+    .bar-chart-bars-area{ gap:10px; padding-bottom:12px }
+    .bar-chart-labels-area{ height:48px; gap:8px }
+    .bar-chart-bar-container{ width:20px; height:220px }
+    .bar-chart-label,.bar-chart-time{ font-size:11px }
+
+    /* Timeline container width tweaks (when present) */
+    .wrap{ width:100% }
   }
 </style>
 </head>
