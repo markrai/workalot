@@ -757,6 +757,14 @@
     overflow-y:auto;
     box-shadow:0 20px 40px rgba(0,0,0,0.5);
   }
+  .welcome-logo{
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .welcome-logo img{
+    max-width:120px;
+    height:auto;
+  }
   .welcome-title{
     color:#4A90E2;
     font-size:18px;
@@ -775,16 +783,14 @@
     margin-bottom:12px;
   }
   .welcome-checkbox{
-    display:flex;
-    align-items:center;
-    gap:8px;
+    text-align:right;
     margin-bottom:16px;
-    font-size:14px;
+    font-size:12px;
     color:var(--text);
   }
   .welcome-checkbox input[type="checkbox"]{
-    width:16px;
-    height:16px;
+    width:12px;
+    height:12px;
     cursor:pointer;
   }
   .welcome-checkbox label{
@@ -930,11 +936,12 @@
   </div>
   <div class="welcome-modal" id="welcomeModal">
     <div class="welcome-content">
-      <div class="welcome-title">
-        👋 Welcome to Workalot
+      <div class="welcome-logo">
+        <img src="logo.png" alt="Workalot Logo" />
       </div>
+      
       <div class="welcome-message">
-        <p>This is a timeline visualization tool for tracking work history across multiple chart types.</p>
+        <p>Workalot is a timeline visualization tool for tracking work history across multiple chart types.</p>
         <p><strong>Upload Your Data:</strong> Click the folder icon (📁) in the top left to upload your own work history - <a href="https://github.com/markrai/workalot/blob/main/history.txt" target="_blank" style="color: #4A90E2; text-decoration: underline;">See sample</a></p>
         
       </div>
