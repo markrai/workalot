@@ -2,7 +2,7 @@
 
 ![Workalot Logo](logo.png)
 
-A minimalist timeline visualization tool for tracking work history across multiple chart types.
+a timeline visualization tool for tracking work history across multiple chart types.
 
 ## Features
 
@@ -10,9 +10,15 @@ A minimalist timeline visualization tool for tracking work history across multip
 - **Pie Chart** - Visual breakdown of time spent at each company
 - **Gantt Chart** - Year-based project timeline view
 - **Bar Chart** - Chronological duration comparison
+- **File Upload** - Upload your own work history file (.txt)
 
 ## Usage
 
+**Option 1 - Upload File:**
+1. Click the folder icon (📁) in the top left to upload your work history file
+2. Select a `.txt` file with your work history
+
+**Option 2 - Edit File Manually:**
 1. Edit `history.txt` with your work history in the format:
    ```
    Company Name MM/DD/YYYY - MM/DD/YYYY

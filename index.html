@@ -731,6 +731,79 @@
   .error-close:hover{
     background:#c41e3a;
   }
+  .welcome-modal{
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.8);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2000;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .welcome-modal.show{
+    opacity:1;
+    visibility:visible;
+  }
+  .welcome-content{
+    background:var(--cell-bg);
+    border:2px solid #4A90E2;
+    border-radius:12px;
+    padding:24px;
+    max-width:500px;
+    max-height:80vh;
+    overflow-y:auto;
+    box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  }
+  .welcome-title{
+    color:#4A90E2;
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .welcome-message{
+    color:var(--text);
+    line-height:1.5;
+    margin-bottom:16px;
+  }
+  .welcome-message p{
+    margin-bottom:12px;
+  }
+  .welcome-checkbox{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:16px;
+    font-size:14px;
+    color:var(--text);
+  }
+  .welcome-checkbox input[type="checkbox"]{
+    width:16px;
+    height:16px;
+    cursor:pointer;
+  }
+  .welcome-checkbox label{
+    cursor:pointer;
+    user-select:none;
+  }
+  .welcome-close{
+    background:#4A90E2;
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.2s ease;
+  }
+  .welcome-close:hover{
+    background:#357ABD;
+  }
   @media (max-width:700px){
     :root{ --bar:24px }
     .year,.month{font-size:.85rem}
@@ -855,6 +928,23 @@
       <button class="error-close" onclick="hideError()">Close</button>
     </div>
   </div>
+  <div class="welcome-modal" id="welcomeModal">
+    <div class="welcome-content">
+      <div class="welcome-title">
+        👋 Welcome to Workalot
+      </div>
+      <div class="welcome-message">
+        <p>This is a timeline visualization tool for tracking work history across multiple chart types.</p>
+        <p><strong>Upload Your Data:</strong> Click the folder icon (📁) in the top left to upload your own work history - <a href="https://github.com/markrai/workalot/blob/main/history.txt" target="_blank" style="color: #4A90E2; text-decoration: underline;">See sample</a></p>
+        
+      </div>
+      <div class="welcome-checkbox">
+        <input type="checkbox" id="dontShowAgain" />
+        <label for="dontShowAgain">Don't show this again</label>
+      </div>
+      <button class="welcome-close" onclick="hideWelcome()">Got it!</button>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 <script>
   const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -869,6 +959,8 @@
   const scrollzone=document.querySelector(".scrollzone");
   const tooltipEl=document.getElementById("tooltip");
   const errorModalEl=document.getElementById("errorModal");
+  const welcomeModalEl=document.getElementById("welcomeModal");
+  const dontShowAgainEl=document.getElementById("dontShowAgain");
   const errorMessageEl=document.getElementById("errorMessage");
   const errorLineEl=document.getElementById("errorLine");
   const toastEl=document.getElementById("toast");
@@ -1051,6 +1143,23 @@
 
   function hideError(){
     errorModalEl.classList.remove('show');
+  }
+
+  function showWelcome(){
+    // Check if user has previously chosen not to show the welcome modal
+    if (localStorage.getItem('workalot-dont-show-welcome') === 'true') {
+      return;
+    }
+    welcomeModalEl.classList.add('show');
+  }
+
+  function hideWelcome(){
+    welcomeModalEl.classList.remove('show');
+    
+    // Save the user's preference if checkbox is checked
+    if (dontShowAgainEl.checked) {
+      localStorage.setItem('workalot-dont-show-welcome', 'true');
+    }
   }
 
    function showToast(message){
@@ -1587,6 +1696,10 @@
       generateTimeline(dataStartYear, dataEndYear);
       applyFixedRowHeight(); 
       buildVerticalCuts(); 
+    })
+    .finally(() => {
+      // Show welcome popup after data is loaded
+      showWelcome();
     });
 
    // Add event listeners for chart switching
