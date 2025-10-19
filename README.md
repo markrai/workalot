@@ -37,6 +37,18 @@ A minimalist timeline visualization tool for tracking work history across multip
 
 3. Switch between chart views using the icons in the top right
 
+## Deployment
+
+**Cloudflare Pages**: This project works perfectly when deployed to Cloudflare Pages:
+
+1. Push your code to a Git repository (GitHub, GitLab, etc.)
+2. Connect your repository to Cloudflare Pages
+3. Set build command to: `echo "No build required"`
+4. Set output directory to: `/` (root)
+5. Deploy!
+
+The `fetch('history.txt')` call will work correctly when served over HTTPS from Cloudflare Pages.
+
 ## Data Format
 
 Each line should follow this pattern:
